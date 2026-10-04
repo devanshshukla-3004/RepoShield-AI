@@ -132,29 +132,23 @@ The validated run reported **1 finding across 2 analyzed files**, completed succ
 
 ## Visual walkthrough
 
-The portfolio demo is intentionally structured as:
+The portfolio demo is intentionally structured as a progression from the security overview to detection, investigation, and AI-assisted remediation.
 
-**Overview → completed scan → finding → AI-assisted triage**
+### 1. Security overview
 
-Recommended media assets:
+![RepoShield AI security overview](docs/media/overview.png)
 
-```text
-docs/
-└── media/
-    ├── overview.png
-    ├── local-scan.png
-    ├── finding-ai-analysis.png
-    └── reposhield-demo.gif
-```
+### 2. Local repository scan
 
-The captured validation screens show:
+![RepoShield AI local scan](docs/media/local-scan.jpeg)
 
-- the local-first security dashboard and runtime status;
-- a completed authorized local scan with one HIGH finding;
-- redacted evidence and withheld paths;
-- AI-generated explanation, risk context, and remediation guidance.
+### 3. Finding details
 
-The repository keeps the application documentation independent from any hosted demo because real local scanning is intentionally not exposed as a public service.
+![RepoShield AI finding details](docs/media/finding-details.jpeg)
+
+### 4. Local AI analysis
+
+![RepoShield AI Gemma analysis](docs/media/finding-ai-analysis.jpeg)
 
 ---
 
