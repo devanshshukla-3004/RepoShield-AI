@@ -1,82 +1,114 @@
 # RepoShield AI
 
-**Local-first repository security review for developers who want to protect a friend before publishing code.**
+**A privacy-first repository secret scanner with optional local Gemma inference.**
 
-RepoShield AI scans a local project for common credential patterns and sensitive filenames, redacts evidence, and provides remediation guidance. It can optionally use an installed Gitleaks CLI for additional secret scanning and a local Gemma model served by Ollama to explain findings.
+RepoShield AI helps a developer review their own repository before sharing it. Gitleaks performs deterministic secret detection; the app redacts evidence and can ask a locally running Gemma model for plain-language explanations. AI output is advisory and never treated as proof that a credential is valid.
 
-## Features
+## What is implemented
 
-- **Local scanning:** heuristic checks for common API keys, GitHub tokens, private-key markers, credential assignments, and sensitive filenames.
-- **Optional Gitleaks:** invokes the Gitleaks CLI when installed.
-- **Redacted evidence:** the interface and exports avoid displaying complete detected values.
-- **Local AI explanations:** optional Gemma via Ollama; the model receives finding metadata and redacted evidence rather than raw source lines.
-- **Reports:** export findings to sanitized JSON and Markdown.
-- **Safety limits:** skips common dependency/build directories, ignores files larger than 1 MB, caps file inspection at 1,500 and findings at 250.
+- React + TypeScript dashboard: Overview, Scan Repository, Findings, Reports, Settings, and About.
+- Clearly labelled synthetic demo mode; demo findings are fabricated and never represent a real scan.
+- Gitleaks CLI integration for authorized working-tree scans.
+- Local Ollama integration targeting `gemma3:1b`.
+- Settings toggle to enable/disable local AI explanations.
+- Secret values are withheld from findings and reports.
+- JSON and Markdown report export.
+- Explicit local scan authorization and dedicated scan-root validation.
+- GitHub Actions typecheck/build workflow.
 
-## Quick start (Windows PowerShell)
+## Architecture
 
-Install Python 3.11 or newer, then from the project folder:
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS.
+- **API:** Express, Zod validation, session-scoped in-memory scan history.
+- **Secret detection:** Gitleaks CLI.
+- **AI:** Ollama `gemma3:1b`, accessed only at `http://127.0.0.1:11434`.
+- **Reports:** sanitized JSON and Markdown.
 
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-streamlit run app.py
-```
+The AI prompt receives only server-defined finding metadata (type, category, severity, and rule identifier). It does not receive source code, raw evidence, or repository paths. If Ollama is unavailable, the API returns deterministic guidance and labels the fallback.
 
-If PowerShell blocks activation, use the virtual environment's interpreter directly:
+## Quick start — Windows
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m streamlit run app.py
-```
+Requirements: Node.js 24, Git, pnpm 10, Ollama, and Gitleaks for real scans.
 
-## Linux
+1. Install Node.js 24 and Git.
+2. Enable pnpm using Corepack from an elevated or regular PowerShell window:
+   ```powershell
+   corepack enable
+   corepack prepare pnpm@10.8.1 --activate
+   ```
+3. Install Ollama from [ollama.com](https://ollama.com/), then download the model:
+   ```powershell
+   ollama pull gemma3:1b
+   ollama list
+   ```
+4. Install Gitleaks from its official releases: https://github.com/gitleaks/gitleaks/releases
+5. In PowerShell, from the repository root:
+   ```powershell
+   pnpm install --frozen-lockfile
+   pnpm run typecheck
+   $env:PORT = "5173"
+   $env:BASE_PATH = "/"
+   pnpm --filter @workspace/reposhield run build
+   pnpm --filter @workspace/api-server run build
+   ```
+6. Create a dedicated directory for repositories you are authorized to scan, for example `C:\ReposToScan`. Copy a test repository into that directory. Do not point the scan root at a drive root or your entire home directory.
+7. Start the local API and built dashboard:
+   ```powershell
+   $env:PORT = "3000"
+   $env:REPOSHIELD_LOCAL_SCAN = "1"
+   $env:REPOSHIELD_SCAN_ROOT = "C:\ReposToScan"
+   pnpm --filter @workspace/api-server run start
+   ```
+8. Open http://127.0.0.1:3000. Visit **Settings & runtime** and confirm Ollama/Gemma is detected. Enable **local Gemma explanations**. Visit **Scan repository** to run the synthetic demo, or select a repository inside `C:\ReposToScan` and confirm authorization before a real scan.
+
+If PowerShell blocks Corepack or pnpm, resolve the Node/pnpm installation first; do not work around dependency errors by disabling security checks.
+
+## Quick start — Linux
+
+Install Node.js 24, Git, pnpm 10, Ollama, and Gitleaks using their official installation instructions. Then:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-streamlit run app.py
+corepack enable
+corepack prepare pnpm@10.8.1 --activate
+ollama pull gemma3:1b
+pnpm install --frozen-lockfile
+pnpm run typecheck
+pnpm test
+PORT=5173 BASE_PATH=/ pnpm --filter @workspace/reposhield run build
+PORT=5173 BASE_PATH=/ pnpm --filter @workspace/api-server run build
+mkdir -p "$HOME/ReposToScan"
+PORT=3000 REPOSHIELD_LOCAL_SCAN=1 REPOSHIELD_SCAN_ROOT="$HOME/ReposToScan" pnpm --filter @workspace/api-server run start
 ```
 
-## Optional integrations
+Then open http://127.0.0.1:3000. Only place authorized repositories under the configured scan root.
 
-### Gitleaks
+## Test the local model
 
-Install Gitleaks using its official installation instructions, then enable the Gitleaks checkbox in the scan page. RepoShield will fall back to heuristic checks if Gitleaks is not installed.
+With Ollama running and `gemma3:1b` installed, run:
 
-### Local Gemma through Ollama
-
-Install Ollama, start it locally, and pull a small Gemma model that your machine can run (for example, `gemma3:1b`). In Findings & reports, use **Ask local Gemma for an explanation** and keep the endpoint pointed at your own local Ollama instance (default: `http://localhost:11434`).
-
-The model is optional. If it is unavailable, the app provides general remediation guidance instead.
-
-## Responsible use and limitations
-
-- Scan only repositories you own or have explicit permission to assess.
-- Run this app locally. Do not expose the dashboard or scan endpoint to the public internet.
-- This MVP scans the working tree, not the full Git history.
-- Heuristic checks can produce false positives and false negatives. A clean scan is not a security guarantee.
-- AI output is advisory and is not the detection engine.
-- If a credential was exposed, revoke or rotate it even after removing it from source.
-- Never commit real secrets or include them in screenshots, issues, or reports.
-
-## Why open innovation matters
-
-Open source makes the detection logic and redaction behavior inspectable. Developers can audit the code, add rules, challenge false positives, and adapt the workflow to their needs. Local Gemma inference provides an option to explain findings without sending repository source code to a hosted AI API.
-
-## Test
-
-```powershell
-python -m unittest discover -s tests
+```bash
+node scripts/check-ollama.mjs
 ```
 
-## Project status
+This sends a harmless smoke-test prompt to the loopback Ollama API and confirms that the model returns a completed response. It does not scan a repository.
 
-Hackathon MVP / work in progress. Validate installation, scanner behavior, and local model availability in your own environment before relying on the results.
+## Privacy and security boundaries
+
+- Real scans are disabled unless `REPOSHIELD_LOCAL_SCAN=1` and `REPOSHIELD_SCAN_ROOT` are configured.
+- Real scanning is intended for the local server, not a public hosted service. Do not expose the local API to an untrusted network.
+- Gitleaks checks the working tree; this implementation does not scan the complete Git history.
+- Reports exclude raw secret values and absolute repository paths.
+- AI explanations are optional, local, and advisory. A model response is not a detection and can be wrong.
+- Demo findings are synthetic examples only.
+- Only scan repositories you own or have explicit permission to inspect.
+
+## Open innovation
+
+Open source makes the security workflow inspectable: developers can review detection rules, audit redaction, test the local inference boundary, and contribute additional safeguards. Local inference can make AI-assisted explanations more accessible without requiring source code to be sent to a hosted model.
+
+## Known limitations
+
+This is a portfolio and learning project, not a replacement for a professional security audit. Expect false positives and false negatives. Rotate any exposed credential at its provider; deleting a file alone does not invalidate a secret or remove it from Git history.
 
 ## License
 

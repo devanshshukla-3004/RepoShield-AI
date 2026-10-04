@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "RepoShield AI"
+description = "Privacy-first repository security reviewer with a safe synthetic demo, sanitized reports, guarded Gitleaks scanning and optional local Ollama explanations."
+version = "1.0.0"
+id = "artifacts/reposhield"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19470
+
+[services.development]
+run = "pnpm --filter @workspace/reposhield run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/reposhield", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/reposhield/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19470"
+BASE_PATH = "/"
