@@ -379,21 +379,6 @@ RepoShield-AI/
 ```
 
 ---
-
-## Roadmap
-
-- [x] Recover full React + API application
-- [x] Restore deterministic Gitleaks scanning
-- [x] Add secure finding sanitization
-- [x] Add authorized local scan-root enforcement
-- [x] Add local Ollama / Gemma explanations
-- [x] Add sanitized JSON / Markdown reports
-- [x] Validate Windows local runtime
-- [ ] Add richer rule-specific remediation
-- [ ] Add optional Git-history audit workflow
-- [ ] Add polished demo media and case-study documentation
-- [ ] Expand automated security regression coverage
-
 ---
 
 ## License
