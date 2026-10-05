@@ -1,0 +1,19 @@
+flowchart LR
+    A["Developer"] --> B["RepoShield Web UI"]
+    B --> C["Express API"]
+
+    C --> D["Scan Authorization"]
+    D --> E["Gitleaks CLI"]
+
+    E --> F["Finding Sanitizer"]
+    F --> G["Sanitized Findings"]
+
+    G --> H["Findings + Reports"]
+    G --> I["Optional Local AI"]
+
+    I --> J["Ollama"]
+    J --> K["Gemma 3 1B"]
+    K --> L["Advisory Explanation"]
+    L --> H
+
+    F -. "never forwards" .-> X["Raw Secret / Absolute Path"]
