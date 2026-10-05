@@ -75,8 +75,8 @@ router.post("/shield/scans", async (req, res): Promise<void> => {
     setTimeout(() => { scan.progress = 75; scan.stage = "Preparing sanitized demo findings"; }, 1300);
     setTimeout(() => { scan.findings = demoFindings(); scan.filesAnalyzed = 12; scan.progress = 100; scan.status = "completed"; scan.stage = "Synthetic demo complete — no repository inspected"; scan.durationMs = Date.now() - started; }, 2200);
   } else {
-    void scanDirectory(target, session.settings.timeoutSeconds).then(findings => {
-      scan.findings = findings; scan.status = "completed"; scan.progress = 100; scan.stage = "Working-tree scan complete (file count unavailable)";
+    void scanDirectory(target, session.settings.timeoutSeconds).then(result => {
+      scan.findings = result.findings; scan.filesAnalyzed = result.filesAnalyzed; scan.status = "completed"; scan.progress = 100; scan.stage = `Working-tree scan complete — ${result.filesAnalyzed} files counted`;
     }).catch(() => { scan.status = "failed"; scan.error = "Gitleaks failed, timed out, or returned an unsupported report. Check the local CLI version (8.24+) and rescan."; scan.stage = "Scan failed"; })
       .finally(() => { scan.durationMs = Date.now() - started; });
   }
