@@ -134,6 +134,11 @@ The validated run reported **1 finding across 2 analyzed files**, completed succ
 
 The portfolio demo is intentionally structured as a progression from the security overview to detection, investigation, and AI-assisted remediation.
 
+### Interactive demo
+
+![RepoShield AI demo](docs/media/reposhield-demo.gif)
+
+
 ### 1. Security overview
 
 ![RepoShield AI security overview](docs/media/overview.png)
