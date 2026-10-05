@@ -1,22 +1,35 @@
-name: RepoShield checks
+name: checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, "recovery/**"]
   pull_request:
     branches: [main]
 
 jobs:
-  checks:
+  typecheck-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: pnpm/action-setup@v4
         with:
-          python-version: "3.11"
-      - name: Install dependencies
-        run: python -m pip install -r requirements.txt
-      - name: Check Python syntax
-        run: python -m py_compile app.py
-      - name: Run unit tests
-        run: python -m unittest discover -s tests -v
+          version: 10.8.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck workspace
+        run: pnpm run typecheck
+      - name: Security-core tests
+        run: pnpm test
+      - name: Build frontend and API
+        env:
+          PORT: 5173
+          BASE_PATH: /
+        run: |
+          pnpm --filter @workspace/reposhield run build
+          pnpm --filter @workspace/api-server run build
