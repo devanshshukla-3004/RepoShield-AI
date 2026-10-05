@@ -45,7 +45,24 @@ export async function validatePath(input: string): Promise<string> {
   await check(target);
   return target;
 }
-export async function scanDirectory(target: string, timeoutSeconds: number): Promise<Finding[]> {
+async function countWorkingTreeFiles(target: string): Promise<number> {
+  let count = 0;
+  async function walk(dir: string): Promise<void> {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      if (entry.name === ".git") continue;
+      const full = join(dir, entry.name);
+      const info = await lstat(full);
+      if (info.isSymbolicLink()) throw new Error("Repositories containing symbolic links are not supported for safety.");
+      if (info.isDirectory()) await walk(full);
+      else if (info.isFile()) count += 1;
+    }
+  }
+  await walk(target);
+  return count;
+}
+
+export async function scanDirectory(target: string, timeoutSeconds: number): Promise<{ findings: Finding[]; filesAnalyzed: number }> {
+  const filesAnalyzed = await countWorkingTreeFiles(target);
   const temp = await mkdtemp(join(tmpdir(), "reposhield-"));
   await chmod(temp, 0o700);
   try {
@@ -59,6 +76,7 @@ export async function scanDirectory(target: string, timeoutSeconds: number): Pro
     } catch { throw new Error("Scanner did not produce a valid bounded report."); }
     const rows: unknown = JSON.parse(text);
     if (!Array.isArray(rows) || rows.length > 10000) throw new Error("Invalid or oversized scanner report.");
-    return rows.filter(row => row && typeof row === "object").map(row => sanitizeFinding(row));
+    const findings = rows.filter(row => row && typeof row === "object").map(row => sanitizeFinding(row));
+    return { findings, filesAnalyzed };
   } finally { await rm(temp, { recursive: true, force: true }); }
 }
