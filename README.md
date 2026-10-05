@@ -136,7 +136,7 @@ The portfolio demo is intentionally structured as a progression from the securit
 
 ### Interactive demo
 
-![RepoShield AI demo](docs/media/reposhield-demo.gif)
+![RepoShield AI demo](docs/media/RepoShield-AI-demo.gif)
 
 
 ### 1. Security overview
